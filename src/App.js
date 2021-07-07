@@ -1,102 +1,68 @@
-import './App.css';
-import Titulo from "./Componentes/titulo";
-import Cuerpo from "./Componentes/cuerpo"
-import { useState } from 'react';
-import Reproductor from "./Componentes/reproductor";
-import Menu from "./Componentes/menu";
-
- 
-
+import { useEffect, useRef, useState } from 'react';
+import Player from './js/components/player.js';
+import SongList from './js/components/songList.js';
 
 function App() {
-   let lista =     [
-          { "id":1, "category":"game", "name":"Mario Castle", "url":"files/mario/songs/castle.mp3" },
-          { "id":2, "category":"game", "name":"Mario Star", "url":"files/mario/songs/hurry-starman.mp3"},
-          { "id":3, "category":"game", "name":"Mario Overworld", "url":"files/mario/songs/overworld.mp3"}
-      ]
-
-       
-     const [cancion, setCancion] = useState({
-       nombre : null,
-       url : null,
-       id : null,
-       indice : 0,
-       
-     });  
-
-    // function selectCancion(e){
-    //   setCancion({nombre : e.name,
-    //             url : e.url
-    //             });
-    //   console.log(cancion);
-    // }  
-    function anterior(){
-      if(cancion.indice>0){
-               setCancion({
-            
-              nombre : lista[cancion.indice-1].name,
-              url : lista[cancion.indice-1].url,
-              id : lista[cancion.indice-1].id,
-              indice : cancion.indice-1
-          })
-            }
+    const [songs, setSongs] = useState([]);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [songOn, setSongOn] = useState(0);
+    let songPlayer = useRef(null);
+    let getFetch = () => {
+        fetch("https://assets.breatheco.de/apis/sound/songs")
+            .then((result) => {
+                return result.json();
+            }).then((data) => {
+                setSongs((data));
+            }).catch((error) => {
+                console.error(error);
+            });
+    };
+    useEffect(() => {
+        getFetch()
+    });
+    let pickSong = (index) => {
+        songPlayer.current.src = `https://assets.breatheco.de/apis/sound/${songs[index].url}`;
+    };
+    let playStop = () => {
+        songPlayer.current.play();
     }
-    function siguiente(){
-      if(cancion.indice<lista.length-1){
-               setCancion({
-            
-              nombre : lista[cancion.indice+1].name,
-              url : lista[cancion.indice+1].url,
-              id : lista[cancion.indice+1].id,
-              indice : cancion.indice+1
-          })
-            }
-            
+    let pauseSong = () => {
+        songPlayer.current.pause();
     }
-
-    // let selected = null;
-    if(5>3){
-      console.log("eamyor");
-    }
-
-   
-    
-  
-  return (
-    <>
-    <div className="container fondo">
-        <Titulo />
-        <Menu/>
-         <div className="row">
-            <div className="col-md-12 encabezado">
-              <ul className="p-2">
-                {lista.map((value,index)=>{
-              return(
-                <Cuerpo
-                key={value.id}
-                contenido={value.name}
-                onClick={(e)=>{setCancion({
-                  nombre : value.name,
-                  url : value.url,
-                  id : value.id,
-                  indice : index,
-                  
-                })
-              
-              
-              }}
-                />
-              )
-            })}
-              </ul>
+    return (
+        <>
+            <div className="row">
+                <div className="col-md-5 col-sm-7 m-auto px-0 mediaplayer">
+                    <SongList
+                        songs={songs}
+                        currentSong={songPlayer}
+                        playStop={playStop}
+                        pickSong={pickSong}
+                        pauseSong={pauseSong}
+                        isPlaying={isPlaying}
+                        setIsPlaying={setIsPlaying}
+                        setSongOn={setSongOn}
+                        songOn={songOn} />
+                    <Player
+                        songs={songs}
+                        playStop={playStop}
+                        currentSong={songPlayer}
+                        pauseSong={pauseSong}
+                        isPlaying={isPlaying}
+                        setIsPlaying={setIsPlaying}
+                        pickSong={pickSong}
+                        setSongOn={setSongOn}
+                        songOn={songOn} />
+                </div>
             </div>
-        </div>
-        <Reproductor  seleccionada={cancion.nombre} urlS={cancion.url} indexCancion={cancion.indice}
-        btnAnterior={anterior} btnSiguiente={siguiente}
-        />
-    </div>
-    </>
-  );
+            <audio src={(songs[0] !== null && songs[0] !== undefined) ?
+                "https://assets.breatheco.de/apis/sound/" + songs[0].url :
+                ""}
+                ref={songPlayer}>
+
+            </audio>
+        </>
+    );
 }
 
 export default App;
